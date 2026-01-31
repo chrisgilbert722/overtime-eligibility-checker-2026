@@ -1,52 +1,63 @@
 import React from 'react';
-import type { LoanResult } from '../logic/loanCalculations';
+import type { EligibilityOutput } from '../logic/eligibilityCalculations';
 
 interface ResultsPanelProps {
-    result: LoanResult;
-    paymentFrequency: 'monthly' | 'biweekly';
+    result: EligibilityOutput;
 }
 
-const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        maximumFractionDigits: 0
-    }).format(val);
+const getResultStyle = (result: EligibilityOutput['result']) => {
+    switch (result) {
+        case 'likely_eligible':
+            return {
+                background: 'linear-gradient(to bottom, #F0FDF4, #DCFCE7)',
+                borderColor: '#86EFAC',
+                color: '#166534',
+                shadow: '0 2px 8px -2px rgba(34, 197, 94, 0.15)'
+            };
+        case 'possibly_eligible':
+            return {
+                background: 'linear-gradient(to bottom, #FEF3C7, #FDE68A)',
+                borderColor: '#FCD34D',
+                color: '#92400E',
+                shadow: '0 2px 8px -2px rgba(245, 158, 11, 0.15)'
+            };
+        case 'likely_exempt':
+            return {
+                background: 'linear-gradient(to bottom, #F8FAFC, #E2E8F0)',
+                borderColor: '#CBD5E1',
+                color: '#475569',
+                shadow: '0 2px 8px -2px rgba(100, 116, 139, 0.15)'
+            };
+    }
 };
 
-export const ResultsPanel: React.FC<ResultsPanelProps> = ({ result, paymentFrequency }) => {
-    const isMonthly = paymentFrequency === 'monthly';
-    const paymentAmount = isMonthly ? result.monthlyPayment : result.biweeklyPayment;
-    const paymentLabel = isMonthly ? 'Estimated Monthly Loan Payment' : 'Estimated Bi-Weekly Loan Payment';
+export const ResultsPanel: React.FC<ResultsPanelProps> = ({ result }) => {
+    const style = getResultStyle(result.result);
 
     return (
-        <div className="card" style={{ background: 'linear-gradient(to bottom, #F0F9FF, #E8F4FD)', borderColor: '#93C5FD', boxShadow: '0 2px 8px -2px rgba(14, 165, 233, 0.15)' }}>
+        <div className="card" style={{ background: style.background, borderColor: style.borderColor, boxShadow: style.shadow }}>
             <div className="text-center">
-                <h2 style={{ fontSize: '1rem', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-2)' }}>
-                    {paymentLabel}
+                <h2 style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-2)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Estimated Eligibility Result
                 </h2>
-                <div style={{ fontSize: '2.75rem', fontWeight: 800, color: '#0C4A6E', lineHeight: 1, letterSpacing: '-0.025em' }}>
-                    {formatCurrency(paymentAmount)}
+                <div style={{ fontSize: '2rem', fontWeight: 800, color: style.color, lineHeight: 1.2, letterSpacing: '-0.025em' }}>
+                    {result.resultLabel}
+                </div>
+                <div style={{ fontSize: '0.8125rem', color: 'var(--color-text-muted)', marginTop: 'var(--space-1)', fontStyle: 'italic' }}>
+                    Eligibility estimate only — not legal advice
                 </div>
             </div>
 
-            <hr style={{ margin: 'var(--space-6) 0', border: 'none', borderTop: '1px solid #93C5FD' }} />
+            <hr style={{ margin: 'var(--space-5) 0', border: 'none', borderTop: `1px solid ${style.borderColor}` }} />
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-2)', textAlign: 'center' }}>
-                <div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>PRINCIPAL</div>
-                    <div style={{ fontWeight: 700, fontSize: '1.125rem' }}>{formatCurrency(result.principalAmount)}</div>
-                </div>
-                <div style={{ borderLeft: '1px solid #93C5FD', borderRight: '1px solid #93C5FD' }}>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>TOTAL INTEREST</div>
-                    <div style={{ fontWeight: 700, fontSize: '1.125rem' }}>{formatCurrency(result.totalInterest)}</div>
-                </div>
-                <div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>TOTAL COST</div>
-                    <div style={{ fontWeight: 700, fontSize: '1.125rem', color: 'var(--color-accent)' }}>
-                        {formatCurrency(result.totalLoanCost)}
-                    </div>
-                </div>
+            <div style={{ fontSize: '0.9375rem', color: 'var(--color-text-secondary)', lineHeight: 1.6, textAlign: 'center' }}>
+                {result.summary}
+            </div>
+
+            <div style={{ marginTop: 'var(--space-4)', padding: 'var(--space-3)', background: 'rgba(0,0,0,0.03)', borderRadius: 'var(--radius-md)', textAlign: 'center' }}>
+                <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                    Actual eligibility depends on full circumstances. Consult an employment attorney or your state labor department for specific guidance.
+                </span>
             </div>
         </div>
     );

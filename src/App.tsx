@@ -7,24 +7,24 @@ import { AdContainer } from './components/AdContainer';
 import { BreakdownTable } from './components/BreakdownTable';
 import { SEOText } from './components/SEOText';
 import { Footer } from './components/Footer';
-import { calculateLoan } from './logic/loanCalculations';
-import type { LoanInput } from './logic/loanCalculations';
+import { calculateEligibility } from './logic/eligibilityCalculations';
+import type { EligibilityInput } from './logic/eligibilityCalculations';
 
 function App() {
-  const [values, setValues] = useState<LoanInput>({
-    loanAmount: 15000,
-    interestRate: 10,
-    loanTermMonths: 36,
-    originationFee: 3,
-    originationFeePercent: true,
-    paymentFrequency: 'monthly'
+  const [values, setValues] = useState<EligibilityInput>({
+    jobType: 'office',
+    payType: 'hourly',
+    weeklyHours: 45,
+    state: 'TX',
+    exemptStatus: 'unsure',
+    annualSalary: 50000
   });
 
-  const handleChange = (field: keyof LoanInput, value: number | boolean | string) => {
+  const handleChange = (field: keyof EligibilityInput, value: string | number) => {
     setValues(prev => ({ ...prev, [field]: value }));
   };
 
-  const result = calculateLoan(values);
+  const result = calculateEligibility(values);
 
   return (
     <>
@@ -37,7 +37,7 @@ function App() {
         <InputCard values={values} onChange={handleChange} />
 
         {/* 3) RESULTS PANEL */}
-        <ResultsPanel result={result} paymentFrequency={values.paymentFrequency} />
+        <ResultsPanel result={result} />
 
         {/* 4) SCENARIO CONTROLS */}
         <ScenarioControls values={values} onChange={handleChange} />
@@ -46,7 +46,7 @@ function App() {
         <AdContainer slotId="native-slot-placeholder" sticky={false} />
 
         {/* 6) BREAKDOWN TABLE */}
-        <BreakdownTable result={result} loanTermMonths={values.loanTermMonths} paymentFrequency={values.paymentFrequency} />
+        <BreakdownTable result={result} />
 
         {/* 7) SEO TEXT */}
         <SEOText />

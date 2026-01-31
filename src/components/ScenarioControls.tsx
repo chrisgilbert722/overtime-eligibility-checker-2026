@@ -1,49 +1,48 @@
 import React from 'react';
-import type { LoanInput } from '../logic/loanCalculations';
+import type { EligibilityInput } from '../logic/eligibilityCalculations';
 
 interface ScenarioControlsProps {
-    values: LoanInput;
-    onChange: (field: keyof LoanInput, value: number | boolean | string) => void;
+    values: EligibilityInput;
+    onChange: (field: keyof EligibilityInput, value: string | number) => void;
 }
 
 export const ScenarioControls: React.FC<ScenarioControlsProps> = ({ values, onChange }) => {
-    const termOptions = [
-        { label: '2 yr', value: 24 },
-        { label: '3 yr', value: 36 },
-        { label: '5 yr', value: 60 },
-        { label: '7 yr', value: 84 },
+    const hoursOptions = [
+        { label: '40 hrs', value: 40 },
+        { label: '45 hrs', value: 45 },
+        { label: '50 hrs', value: 50 },
+        { label: '55 hrs', value: 55 },
     ];
 
-    const rateOptions = [
-        { label: '6%', value: 6 },
-        { label: '10%', value: 10 },
-        { label: '15%', value: 15 },
-        { label: '20%', value: 20 },
+    const exemptOptions = [
+        { label: 'Unsure', value: 'unsure' },
+        { label: 'Non-Exempt', value: 'no' },
+        { label: 'Exempt', value: 'yes' },
     ];
 
     return (
         <div className="card">
             <h3 style={{ marginBottom: 'var(--space-4)' }}>Quick Adjustments</h3>
 
-            {/* Term Quick Select */}
+            {/* Hours Quick Select */}
             <div style={{ marginBottom: 'var(--space-4)' }}>
-                <label style={{ marginBottom: 'var(--space-2)' }}>Loan Term</label>
+                <label style={{ marginBottom: 'var(--space-2)' }}>Weekly Hours</label>
                 <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-                    {termOptions.map((option) => (
+                    {hoursOptions.map((option) => (
                         <button
                             key={option.value}
                             type="button"
-                            onClick={() => onChange('loanTermMonths', option.value)}
+                            onClick={() => onChange('weeklyHours', option.value)}
                             style={{
                                 flex: 1,
                                 padding: 'var(--space-2) var(--space-3)',
                                 fontSize: '0.875rem',
                                 fontWeight: 500,
                                 border: '1px solid',
-                                borderColor: values.loanTermMonths === option.value ? 'var(--color-primary)' : 'var(--color-border)',
+                                borderColor: values.weeklyHours === option.value ? 'var(--color-primary)' : 'var(--color-border)',
                                 borderRadius: 'var(--radius-md)',
-                                background: values.loanTermMonths === option.value ? 'var(--color-primary)' : 'transparent',
-                                color: values.loanTermMonths === option.value ? '#fff' : 'var(--color-text-primary)',
+                                background: values.weeklyHours === option.value ? 'var(--color-primary)' : 'transparent',
+                                color: values.weeklyHours === option.value ? '#fff' : 'var(--color-text-primary)',
                                 cursor: 'pointer'
                             }}
                         >
@@ -53,25 +52,25 @@ export const ScenarioControls: React.FC<ScenarioControlsProps> = ({ values, onCh
                 </div>
             </div>
 
-            {/* Rate Quick Select */}
+            {/* Exempt Status Quick Select */}
             <div>
-                <label style={{ marginBottom: 'var(--space-2)' }}>Interest Rate</label>
+                <label style={{ marginBottom: 'var(--space-2)' }}>Exempt Status</label>
                 <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-                    {rateOptions.map((option) => (
+                    {exemptOptions.map((option) => (
                         <button
                             key={option.value}
                             type="button"
-                            onClick={() => onChange('interestRate', option.value)}
+                            onClick={() => onChange('exemptStatus', option.value)}
                             style={{
                                 flex: 1,
                                 padding: 'var(--space-2) var(--space-3)',
                                 fontSize: '0.875rem',
                                 fontWeight: 500,
                                 border: '1px solid',
-                                borderColor: values.interestRate === option.value ? 'var(--color-primary)' : 'var(--color-border)',
+                                borderColor: values.exemptStatus === option.value ? 'var(--color-primary)' : 'var(--color-border)',
                                 borderRadius: 'var(--radius-md)',
-                                background: values.interestRate === option.value ? 'var(--color-primary)' : 'transparent',
-                                color: values.interestRate === option.value ? '#fff' : 'var(--color-text-primary)',
+                                background: values.exemptStatus === option.value ? 'var(--color-primary)' : 'transparent',
+                                color: values.exemptStatus === option.value ? '#fff' : 'var(--color-text-primary)',
                                 cursor: 'pointer'
                             }}
                         >

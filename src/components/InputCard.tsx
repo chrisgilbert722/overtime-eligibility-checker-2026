@@ -1,97 +1,101 @@
 import React from 'react';
-import type { LoanInput } from '../logic/loanCalculations';
+import type { EligibilityInput } from '../logic/eligibilityCalculations';
+import { JOB_TYPE_OPTIONS, US_STATES } from '../logic/eligibilityCalculations';
 
 interface InputCardProps {
-    values: LoanInput;
-    onChange: (field: keyof LoanInput, value: number | boolean | string) => void;
+    values: EligibilityInput;
+    onChange: (field: keyof EligibilityInput, value: string | number) => void;
 }
 
 export const InputCard: React.FC<InputCardProps> = ({ values, onChange }) => {
     return (
         <div className="card">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-                {/* Loan Amount */}
+                {/* Job Type */}
                 <div>
-                    <label htmlFor="loanAmount">Loan Amount ($)</label>
-                    <input
-                        type="number"
-                        id="loanAmount"
-                        value={values.loanAmount}
-                        onChange={(e) => onChange('loanAmount', parseFloat(e.target.value) || 0)}
-                        min="0"
-                        step="100"
-                    />
-                </div>
-
-                {/* Interest Rate */}
-                <div>
-                    <label htmlFor="interestRate">Interest Rate (APR %)</label>
-                    <input
-                        type="number"
-                        id="interestRate"
-                        value={values.interestRate}
-                        onChange={(e) => onChange('interestRate', parseFloat(e.target.value) || 0)}
-                        min="0"
-                        max="50"
-                        step="0.1"
-                    />
-                </div>
-
-                {/* Loan Term */}
-                <div>
-                    <label htmlFor="loanTermMonths">Loan Term (months)</label>
+                    <label htmlFor="jobType">Job Type</label>
                     <select
-                        id="loanTermMonths"
-                        value={values.loanTermMonths}
-                        onChange={(e) => onChange('loanTermMonths', parseInt(e.target.value))}
+                        id="jobType"
+                        value={values.jobType}
+                        onChange={(e) => onChange('jobType', e.target.value)}
                     >
-                        <option value={12}>12 months (1 year)</option>
-                        <option value={24}>24 months (2 years)</option>
-                        <option value={36}>36 months (3 years)</option>
-                        <option value={48}>48 months (4 years)</option>
-                        <option value={60}>60 months (5 years)</option>
-                        <option value={72}>72 months (6 years)</option>
-                        <option value={84}>84 months (7 years)</option>
+                        {JOB_TYPE_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
                     </select>
                 </div>
 
-                {/* Origination Fee */}
+                {/* Pay Type */}
                 <div>
-                    <label htmlFor="originationFee">
-                        Origination Fee ({values.originationFeePercent ? '%' : '$'})
-                    </label>
-                    <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
+                    <label htmlFor="payType">Pay Type</label>
+                    <select
+                        id="payType"
+                        value={values.payType}
+                        onChange={(e) => onChange('payType', e.target.value)}
+                    >
+                        <option value="hourly">Hourly</option>
+                        <option value="salary">Salary</option>
+                    </select>
+                </div>
+
+                {/* Annual Salary (only shown for salaried) */}
+                {values.payType === 'salary' && (
+                    <div>
+                        <label htmlFor="annualSalary">Annual Salary ($)</label>
                         <input
                             type="number"
-                            id="originationFee"
-                            value={values.originationFee}
-                            onChange={(e) => onChange('originationFee', parseFloat(e.target.value) || 0)}
+                            id="annualSalary"
+                            value={values.annualSalary}
+                            onChange={(e) => onChange('annualSalary', parseFloat(e.target.value) || 0)}
                             min="0"
-                            step={values.originationFeePercent ? 0.5 : 50}
-                            style={{ flex: 1 }}
+                            step="1000"
                         />
-                        <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)', marginBottom: 0, cursor: 'pointer' }}>
-                            <input
-                                type="checkbox"
-                                checked={values.originationFeePercent}
-                                onChange={(e) => onChange('originationFeePercent', e.target.checked)}
-                            />
-                            <span style={{ fontSize: '0.8125rem' }}>%</span>
-                        </label>
                     </div>
+                )}
+
+                {/* Weekly Hours */}
+                <div>
+                    <label htmlFor="weeklyHours">Typical Weekly Hours Worked</label>
+                    <input
+                        type="number"
+                        id="weeklyHours"
+                        value={values.weeklyHours}
+                        onChange={(e) => onChange('weeklyHours', parseFloat(e.target.value) || 0)}
+                        min="0"
+                        max="168"
+                        step="1"
+                    />
                 </div>
 
-                {/* Payment Frequency */}
+                {/* State */}
                 <div>
-                    <label htmlFor="paymentFrequency">Payment Frequency</label>
+                    <label htmlFor="state">State</label>
                     <select
-                        id="paymentFrequency"
-                        value={values.paymentFrequency}
-                        onChange={(e) => onChange('paymentFrequency', e.target.value as 'monthly' | 'biweekly')}
+                        id="state"
+                        value={values.state}
+                        onChange={(e) => onChange('state', e.target.value)}
                     >
-                        <option value="monthly">Monthly</option>
-                        <option value="biweekly">Bi-Weekly (every 2 weeks)</option>
+                        {US_STATES.map((st) => (
+                            <option key={st.value} value={st.value}>{st.label}</option>
+                        ))}
                     </select>
+                </div>
+
+                {/* Exempt Status */}
+                <div>
+                    <label htmlFor="exemptStatus">Are you classified as exempt?</label>
+                    <select
+                        id="exemptStatus"
+                        value={values.exemptStatus}
+                        onChange={(e) => onChange('exemptStatus', e.target.value)}
+                    >
+                        <option value="unsure">Unsure / Don't Know</option>
+                        <option value="no">No - Non-Exempt</option>
+                        <option value="yes">Yes - Exempt</option>
+                    </select>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                        Exempt status is typically listed on your employment agreement or job offer
+                    </span>
                 </div>
             </div>
         </div>

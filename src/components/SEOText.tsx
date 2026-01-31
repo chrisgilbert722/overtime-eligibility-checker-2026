@@ -4,12 +4,11 @@ export const SEOText: React.FC = () => {
     return (
         <div className="card" style={{ background: '#F8FAFC' }}>
             <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', lineHeight: 1.7 }}>
-                This personal loan calculator provides estimated monthly payments, total interest,
-                and total cost based on your loan amount, interest rate, and term length. Origination
-                fees are factored into the total cost calculation. These figures are estimates only
-                and actual loan terms may vary based on your credit profile, lender policies, and
-                market conditions. This calculator is for informational purposes and does not
-                constitute a loan offer or financial advice.
+                This overtime eligibility checker provides a simplified estimate based on basic employment
+                factors such as pay type, salary level, and exempt status. These results are estimates only
+                and do not constitute legal advice. Actual overtime eligibility is determined by federal
+                and state laws, your specific job duties, and how your employer classifies your position.
+                For accurate guidance, consult an employment attorney or your state labor department.
             </p>
         </div>
     );
