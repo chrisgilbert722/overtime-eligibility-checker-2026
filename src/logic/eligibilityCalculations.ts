@@ -1,258 +1,103 @@
-export type JobType =
-    | 'office'
-    | 'retail'
-    | 'healthcare'
-    | 'manufacturing'
-    | 'tech'
-    | 'construction'
-    | 'food_service'
-    | 'transportation'
-    | 'other';
-
-export type PayType = 'salary' | 'hourly';
-
-export type ExemptStatus = 'yes' | 'no' | 'unsure';
-
-export type EligibilityResult = 'likely_eligible' | 'possibly_eligible' | 'likely_exempt';
-
-export interface EligibilityInput {
-    jobType: JobType;
-    payType: PayType;
-    weeklyHours: number;
-    state: string;
-    exemptStatus: ExemptStatus;
-    annualSalary: number;
+export interface OvertimeInput {
+  jobRole: string;
+  payType: string;
+  weeklyEarnings: number;
+  state: string;
+  dutiesTest: string;
 }
 
-export interface EligibilityFactor {
-    factor: string;
-    status: 'favorable' | 'unfavorable' | 'neutral';
-    explanation: string;
+export interface OvertimeResult {
+  eligibilityLow: number;
+  eligibilityHigh: number;
+  flsaExemptionIndicator: string;
+  stateNotes: string;
+  factors: { factor: string; valueLow: string; valueHigh: string }[];
 }
 
-export interface EligibilityOutput {
-    result: EligibilityResult;
-    resultLabel: string;
-    summary: string;
-    factors: EligibilityFactor[];
-    federalThreshold: number;
-    stateThreshold: number | null;
-    stateHasSpecialRules: boolean;
-    hoursOverThreshold: number;
-}
+const FEDERAL_SALARY_THRESHOLD = 58656;
 
-// 2026 Federal salary threshold (projected based on DOL rules)
-const FEDERAL_SALARY_THRESHOLD_2026 = 58656; // $1,128/week × 52
-
-// States with higher salary thresholds or special OT rules
-const STATE_THRESHOLDS: Record<string, { threshold: number; specialRules: string }> = {
-    'CA': { threshold: 66560, specialRules: 'California has daily overtime after 8 hours' },
-    'NY': { threshold: 62400, specialRules: 'New York has higher threshold for certain industries' },
-    'WA': { threshold: 69500, specialRules: 'Washington has tiered thresholds based on employer size' },
-    'CO': { threshold: 57500, specialRules: 'Colorado requires overtime for certain job types' },
-    'AK': { threshold: 58656, specialRules: 'Alaska has daily overtime after 8 hours' },
-    'NV': { threshold: 58656, specialRules: 'Nevada has daily overtime after 8 hours if wage below threshold' },
+const STATE_THRESHOLDS: Record<string, { threshold: number; note: string }> = {
+  'CA': { threshold: 66560, note: 'California may require daily overtime after 8 hours and has a higher salary threshold' },
+  'NY': { threshold: 62400, note: 'New York has higher salary thresholds for certain industries' },
+  'WA': { threshold: 69500, note: 'Washington has tiered salary thresholds based on employer size' },
+  'CO': { threshold: 57500, note: 'Colorado has specific overtime rules for certain job types' },
+  'AK': { threshold: 58656, note: 'Alaska may require daily overtime after 8 hours' },
+  'NV': { threshold: 58656, note: 'Nevada may require daily overtime after 8 hours depending on wage level' },
 };
 
-export function calculateEligibility(input: EligibilityInput): EligibilityOutput {
-    const factors: EligibilityFactor[] = [];
-    let eligibilityScore = 0; // Higher = more likely eligible
+const ROLE_EXEMPTION_WEIGHT: Record<string, number> = {
+  'executive': 25,
+  'administrative': 20,
+  'professional': 20,
+  'computer': 15,
+  'outside-sales': 30,
+  'retail': -15,
+  'manufacturing': -20,
+  'food-service': -20,
+  'healthcare-nonexempt': -15,
+  'construction': -20,
+  'other': 0,
+};
 
-    const federalThreshold = FEDERAL_SALARY_THRESHOLD_2026;
-    const stateInfo = STATE_THRESHOLDS[input.state];
-    const stateThreshold = stateInfo?.threshold || null;
-    const effectiveThreshold = stateThreshold ? Math.max(federalThreshold, stateThreshold) : federalThreshold;
+export function calculateOvertime(input: OvertimeInput): OvertimeResult {
+  const annualizedEarnings = input.weeklyEarnings * 52;
+  const stateInfo = STATE_THRESHOLDS[input.state];
+  const effectiveThreshold = stateInfo ? Math.max(FEDERAL_SALARY_THRESHOLD, stateInfo.threshold) : FEDERAL_SALARY_THRESHOLD;
 
-    // Factor 1: Pay Type
-    if (input.payType === 'hourly') {
-        eligibilityScore += 3;
-        factors.push({
-            factor: 'Pay Type',
-            status: 'favorable',
-            explanation: 'Hourly workers are generally eligible for overtime pay'
-        });
-    } else {
-        factors.push({
-            factor: 'Pay Type',
-            status: 'neutral',
-            explanation: 'Salaried workers may be eligible depending on salary level and duties'
-        });
-    }
+  let baseLow = 40;
+  let baseHigh = 70;
 
-    // Factor 2: Exempt Status
-    if (input.exemptStatus === 'no') {
-        eligibilityScore += 3;
-        factors.push({
-            factor: 'Exempt Status',
-            status: 'favorable',
-            explanation: 'Non-exempt workers are entitled to overtime pay'
-        });
-    } else if (input.exemptStatus === 'yes') {
-        eligibilityScore -= 3;
-        factors.push({
-            factor: 'Exempt Status',
-            status: 'unfavorable',
-            explanation: 'Exempt workers are generally not entitled to overtime pay'
-        });
-    } else {
-        factors.push({
-            factor: 'Exempt Status',
-            status: 'neutral',
-            explanation: 'Exempt status depends on salary level and job duties'
-        });
-    }
+  // Pay type adjustment
+  if (input.payType === 'hourly') {
+    baseLow += 25;
+    baseHigh += 20;
+  } else if (input.payType === 'salary' && annualizedEarnings < effectiveThreshold) {
+    baseLow += 15;
+    baseHigh += 15;
+  } else if (input.payType === 'salary' && annualizedEarnings >= effectiveThreshold) {
+    baseLow -= 20;
+    baseHigh -= 15;
+  }
 
-    // Factor 3: Salary Level (for salaried workers)
-    if (input.payType === 'salary') {
-        if (input.annualSalary < effectiveThreshold) {
-            eligibilityScore += 2;
-            factors.push({
-                factor: 'Salary Level',
-                status: 'favorable',
-                explanation: `Salary below ${formatCurrency(effectiveThreshold)} threshold may qualify for overtime`
-            });
-        } else {
-            eligibilityScore -= 1;
-            factors.push({
-                factor: 'Salary Level',
-                status: 'unfavorable',
-                explanation: `Salary above ${formatCurrency(effectiveThreshold)} threshold may indicate exempt status`
-            });
-        }
-    }
+  // Role adjustment
+  const roleWeight = ROLE_EXEMPTION_WEIGHT[input.jobRole] ?? 0;
+  baseLow -= roleWeight;
+  baseHigh -= roleWeight;
 
-    // Factor 4: Hours Worked
-    const hoursOverThreshold = Math.max(0, input.weeklyHours - 40);
-    if (input.weeklyHours > 40) {
-        factors.push({
-            factor: 'Hours Worked',
-            status: 'neutral',
-            explanation: `Working ${hoursOverThreshold} hours over the 40-hour threshold`
-        });
-    } else {
-        factors.push({
-            factor: 'Hours Worked',
-            status: 'neutral',
-            explanation: 'Working 40 hours or less per week (no overtime hours)'
-        });
-    }
+  // Duties test adjustment
+  if (input.dutiesTest === 'non-exempt') {
+    baseLow += 15;
+    baseHigh += 10;
+  } else if (input.dutiesTest === 'exempt') {
+    baseLow -= 20;
+    baseHigh -= 15;
+  }
 
-    // Factor 5: State Rules
-    if (stateInfo) {
-        factors.push({
-            factor: 'State Rules',
-            status: 'neutral',
-            explanation: stateInfo.specialRules
-        });
-    } else {
-        factors.push({
-            factor: 'State Rules',
-            status: 'neutral',
-            explanation: 'State follows federal overtime rules'
-        });
-    }
+  baseLow = Math.max(0, Math.min(100, baseLow));
+  baseHigh = Math.max(0, Math.min(100, baseHigh));
+  if (baseLow > baseHigh) baseLow = baseHigh;
 
-    // Determine result
-    let result: EligibilityResult;
-    let resultLabel: string;
-    let summary: string;
+  // FLSA exemption indicator
+  let flsaExemptionIndicator: string;
+  const avg = (baseLow + baseHigh) / 2;
+  if (avg >= 60) flsaExemptionIndicator = 'Likely Non-Exempt (Eligible)';
+  else if (avg >= 35) flsaExemptionIndicator = 'Uncertain — Review Duties';
+  else flsaExemptionIndicator = 'Likely Exempt (Not Eligible)';
 
-    if (input.exemptStatus === 'yes' && input.payType === 'salary' && input.annualSalary >= effectiveThreshold) {
-        result = 'likely_exempt';
-        resultLabel = 'Likely Exempt';
-        summary = 'Based on the information provided, you may be classified as exempt from overtime pay. Exempt status typically applies to salaried employees above the salary threshold who perform executive, administrative, or professional duties.';
-    } else if (input.payType === 'hourly' || input.exemptStatus === 'no' || (input.payType === 'salary' && input.annualSalary < effectiveThreshold)) {
-        result = 'likely_eligible';
-        resultLabel = 'Likely Eligible';
-        summary = 'Based on the information provided, you may be eligible for overtime pay. Hourly workers and salaried workers below the salary threshold are generally entitled to overtime for hours worked over 40 per week.';
-    } else {
-        result = 'possibly_eligible';
-        resultLabel = 'Possibly Eligible';
-        summary = 'Based on the information provided, your eligibility is uncertain. Actual overtime eligibility depends on your specific job duties, how your employer classifies your position, and applicable federal and state laws.';
-    }
+  const stateNotes = stateInfo ? stateInfo.note : 'This state generally follows federal FLSA overtime rules';
 
-    return {
-        result,
-        resultLabel,
-        summary,
-        factors,
-        federalThreshold,
-        stateThreshold,
-        stateHasSpecialRules: !!stateInfo,
-        hoursOverThreshold
-    };
+  const factors: OvertimeResult['factors'] = [
+    { factor: 'Pay Type', valueLow: input.payType, valueHigh: input.payType },
+    { factor: 'Annualized Earnings', valueLow: fmt(annualizedEarnings), valueHigh: fmt(annualizedEarnings) },
+    { factor: 'Federal Threshold (2026)', valueLow: fmt(FEDERAL_SALARY_THRESHOLD), valueHigh: fmt(FEDERAL_SALARY_THRESHOLD) },
+    { factor: 'Effective Threshold', valueLow: fmt(effectiveThreshold), valueHigh: fmt(effectiveThreshold) },
+    { factor: 'Below Threshold?', valueLow: annualizedEarnings < effectiveThreshold ? 'Yes' : 'No', valueHigh: annualizedEarnings < effectiveThreshold ? 'Yes' : 'No' },
+    { factor: 'FLSA Indicator', valueLow: flsaExemptionIndicator, valueHigh: flsaExemptionIndicator },
+  ];
+
+  return { eligibilityLow: baseLow, eligibilityHigh: baseHigh, flsaExemptionIndicator, stateNotes, factors };
 }
 
-function formatCurrency(val: number): string {
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        maximumFractionDigits: 0
-    }).format(val);
+function fmt(n: number): string {
+  return n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 }
-
-export const JOB_TYPE_OPTIONS: Array<{ value: JobType; label: string }> = [
-    { value: 'office', label: 'Office / Administrative' },
-    { value: 'retail', label: 'Retail / Sales' },
-    { value: 'healthcare', label: 'Healthcare' },
-    { value: 'manufacturing', label: 'Manufacturing / Warehouse' },
-    { value: 'tech', label: 'Technology / IT' },
-    { value: 'construction', label: 'Construction / Trades' },
-    { value: 'food_service', label: 'Food Service / Hospitality' },
-    { value: 'transportation', label: 'Transportation / Logistics' },
-    { value: 'other', label: 'Other' },
-];
-
-export const US_STATES: Array<{ value: string; label: string }> = [
-    { value: 'AL', label: 'Alabama' },
-    { value: 'AK', label: 'Alaska' },
-    { value: 'AZ', label: 'Arizona' },
-    { value: 'AR', label: 'Arkansas' },
-    { value: 'CA', label: 'California' },
-    { value: 'CO', label: 'Colorado' },
-    { value: 'CT', label: 'Connecticut' },
-    { value: 'DE', label: 'Delaware' },
-    { value: 'FL', label: 'Florida' },
-    { value: 'GA', label: 'Georgia' },
-    { value: 'HI', label: 'Hawaii' },
-    { value: 'ID', label: 'Idaho' },
-    { value: 'IL', label: 'Illinois' },
-    { value: 'IN', label: 'Indiana' },
-    { value: 'IA', label: 'Iowa' },
-    { value: 'KS', label: 'Kansas' },
-    { value: 'KY', label: 'Kentucky' },
-    { value: 'LA', label: 'Louisiana' },
-    { value: 'ME', label: 'Maine' },
-    { value: 'MD', label: 'Maryland' },
-    { value: 'MA', label: 'Massachusetts' },
-    { value: 'MI', label: 'Michigan' },
-    { value: 'MN', label: 'Minnesota' },
-    { value: 'MS', label: 'Mississippi' },
-    { value: 'MO', label: 'Missouri' },
-    { value: 'MT', label: 'Montana' },
-    { value: 'NE', label: 'Nebraska' },
-    { value: 'NV', label: 'Nevada' },
-    { value: 'NH', label: 'New Hampshire' },
-    { value: 'NJ', label: 'New Jersey' },
-    { value: 'NM', label: 'New Mexico' },
-    { value: 'NY', label: 'New York' },
-    { value: 'NC', label: 'North Carolina' },
-    { value: 'ND', label: 'North Dakota' },
-    { value: 'OH', label: 'Ohio' },
-    { value: 'OK', label: 'Oklahoma' },
-    { value: 'OR', label: 'Oregon' },
-    { value: 'PA', label: 'Pennsylvania' },
-    { value: 'RI', label: 'Rhode Island' },
-    { value: 'SC', label: 'South Carolina' },
-    { value: 'SD', label: 'South Dakota' },
-    { value: 'TN', label: 'Tennessee' },
-    { value: 'TX', label: 'Texas' },
-    { value: 'UT', label: 'Utah' },
-    { value: 'VT', label: 'Vermont' },
-    { value: 'VA', label: 'Virginia' },
-    { value: 'WA', label: 'Washington' },
-    { value: 'WV', label: 'West Virginia' },
-    { value: 'WI', label: 'Wisconsin' },
-    { value: 'WY', label: 'Wyoming' },
-    { value: 'DC', label: 'District of Columbia' },
-];

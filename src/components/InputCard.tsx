@@ -1,103 +1,68 @@
-import React from 'react';
-import type { EligibilityInput } from '../logic/eligibilityCalculations';
-import { JOB_TYPE_OPTIONS, US_STATES } from '../logic/eligibilityCalculations';
+import { OvertimeInput } from '../logic/eligibilityCalculations';
 
 interface InputCardProps {
-    values: EligibilityInput;
-    onChange: (field: keyof EligibilityInput, value: string | number) => void;
+    inputs: OvertimeInput;
+    setInputs: React.Dispatch<React.SetStateAction<OvertimeInput>>;
 }
 
-export const InputCard: React.FC<InputCardProps> = ({ values, onChange }) => {
+export default function InputCard({ inputs, setInputs }: InputCardProps) {
     return (
         <div className="card">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-                {/* Job Type */}
-                <div>
-                    <label htmlFor="jobType">Job Type</label>
-                    <select
-                        id="jobType"
-                        value={values.jobType}
-                        onChange={(e) => onChange('jobType', e.target.value)}
-                    >
-                        {JOB_TYPE_OPTIONS.map((opt) => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
+            <div className="input-grid">
+                <div className="input-group">
+                    <label>Job Role Category</label>
+                    <select value={inputs.jobRole} onChange={e => setInputs(prev => ({ ...prev, jobRole: e.target.value }))}>
+                        <option value="retail">Retail / Sales</option>
+                        <option value="manufacturing">Manufacturing / Warehouse</option>
+                        <option value="food-service">Food Service / Hospitality</option>
+                        <option value="construction">Construction / Trades</option>
+                        <option value="healthcare-nonexempt">Healthcare (Non-Exempt Roles)</option>
+                        <option value="administrative">Administrative / Office</option>
+                        <option value="professional">Professional (Licensed)</option>
+                        <option value="computer">Computer / IT Professional</option>
+                        <option value="executive">Executive / Management</option>
+                        <option value="outside-sales">Outside Sales</option>
+                        <option value="other">Other</option>
                     </select>
                 </div>
-
-                {/* Pay Type */}
-                <div>
-                    <label htmlFor="payType">Pay Type</label>
-                    <select
-                        id="payType"
-                        value={values.payType}
-                        onChange={(e) => onChange('payType', e.target.value)}
-                    >
+                <div className="input-group">
+                    <label>Salary vs Hourly</label>
+                    <select value={inputs.payType} onChange={e => setInputs(prev => ({ ...prev, payType: e.target.value }))}>
                         <option value="hourly">Hourly</option>
                         <option value="salary">Salary</option>
                     </select>
                 </div>
-
-                {/* Annual Salary (only shown for salaried) */}
-                {values.payType === 'salary' && (
-                    <div>
-                        <label htmlFor="annualSalary">Annual Salary ($)</label>
-                        <input
-                            type="number"
-                            id="annualSalary"
-                            value={values.annualSalary}
-                            onChange={(e) => onChange('annualSalary', parseFloat(e.target.value) || 0)}
-                            min="0"
-                            step="1000"
-                        />
-                    </div>
-                )}
-
-                {/* Weekly Hours */}
-                <div>
-                    <label htmlFor="weeklyHours">Typical Weekly Hours Worked</label>
-                    <input
-                        type="number"
-                        id="weeklyHours"
-                        value={values.weeklyHours}
-                        onChange={(e) => onChange('weeklyHours', parseFloat(e.target.value) || 0)}
-                        min="0"
-                        max="168"
-                        step="1"
-                    />
+                <div className="input-group">
+                    <label>Weekly Earnings ($)</label>
+                    <input type="number" min="0" step="50" value={inputs.weeklyEarnings} onChange={e => setInputs(prev => ({ ...prev, weeklyEarnings: Number(e.target.value) }))} />
                 </div>
-
-                {/* State */}
-                <div>
-                    <label htmlFor="state">State</label>
-                    <select
-                        id="state"
-                        value={values.state}
-                        onChange={(e) => onChange('state', e.target.value)}
-                    >
-                        {US_STATES.map((st) => (
-                            <option key={st.value} value={st.value}>{st.label}</option>
-                        ))}
+                <div className="input-group">
+                    <label>State of Employment</label>
+                    <select value={inputs.state} onChange={e => setInputs(prev => ({ ...prev, state: e.target.value }))}>
+                        <option value="CA">California</option>
+                        <option value="NY">New York</option>
+                        <option value="TX">Texas</option>
+                        <option value="FL">Florida</option>
+                        <option value="IL">Illinois</option>
+                        <option value="PA">Pennsylvania</option>
+                        <option value="OH">Ohio</option>
+                        <option value="GA">Georgia</option>
+                        <option value="WA">Washington</option>
+                        <option value="CO">Colorado</option>
+                        <option value="AK">Alaska</option>
+                        <option value="NV">Nevada</option>
+                        <option value="OTHER">Other State</option>
                     </select>
                 </div>
-
-                {/* Exempt Status */}
-                <div>
-                    <label htmlFor="exemptStatus">Are you classified as exempt?</label>
-                    <select
-                        id="exemptStatus"
-                        value={values.exemptStatus}
-                        onChange={(e) => onChange('exemptStatus', e.target.value)}
-                    >
-                        <option value="unsure">Unsure / Don't Know</option>
-                        <option value="no">No - Non-Exempt</option>
-                        <option value="yes">Yes - Exempt</option>
+                <div className="input-group">
+                    <label>Duties Test Indicator</label>
+                    <select value={inputs.dutiesTest} onChange={e => setInputs(prev => ({ ...prev, dutiesTest: e.target.value }))}>
+                        <option value="unsure">Unsure / Not Sure</option>
+                        <option value="non-exempt">Non-Exempt Duties</option>
+                        <option value="exempt">Exempt Duties (Managerial/Professional)</option>
                     </select>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-                        Exempt status is typically listed on your employment agreement or job offer
-                    </span>
                 </div>
             </div>
         </div>
     );
-};
+}

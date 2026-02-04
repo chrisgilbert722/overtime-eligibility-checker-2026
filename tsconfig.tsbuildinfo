@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/components/adcontainer.tsx","./src/components/breakdowntable.tsx","./src/components/footer.tsx","./src/components/header.tsx","./src/components/inputcard.tsx","./src/components/resultspanel.tsx","./src/components/seotext.tsx","./src/logic/eligibilitycalculations.ts"],"version":"5.7.3"}

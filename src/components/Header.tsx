@@ -1,12 +1,8 @@
-import React from 'react';
-
-export const Header: React.FC = () => {
+export default function Header() {
     return (
-        <header style={{ textAlign: 'center' }}>
-            <h1>Overtime Eligibility Checker (2026)</h1>
-            <p style={{ color: 'var(--color-text-secondary)', marginTop: 'var(--space-2)' }}>
-                Estimate whether you may qualify for overtime pay
-            </p>
-        </header>
+        <div className="header">
+            <h1>Overtime Eligibility Checker</h1>
+            <p className="subtitle">Estimate overtime eligibility likelihood for 2026 based on role, pay, and state</p>
+        </div>
     );
-};
+}
